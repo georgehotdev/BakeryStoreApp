@@ -1,0 +1,2 @@
+# BakeryStoreApp
+Microservices architecture showcase
