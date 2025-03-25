@@ -1,0 +1,51 @@
+﻿version: "3.4"
+
+services:
+  catalogdb:
+    image: mongo
+
+  basketdb:
+    image: redis
+
+  discountdb:
+    image: mongo
+
+  mongoexpresscatalogdb:
+    image: mongo-express
+
+  mongoexpressdiscountdb:
+    image: mongo-express
+    
+  storefront:
+    image: storefront
+    build:
+      context: .
+      dockerfile: src/StoreFront/BakeryStore.API/Dockerfile
+    
+  catalogapi:
+    image: catalogapi
+    build:
+      context: .
+      dockerfile: src/Catalog/Catalog.API/Dockerfile
+
+  basketapi:
+    image: basketapi
+    build:
+      context: .
+      dockerfile: src/Basket/Basket.API/Dockerfile
+
+  discountapi:
+    image: discountapi
+    build:
+      context: .
+      dockerfile: src/Discount/Discount.API/Dockerfile
+
+  discountgrpc:
+    image: discountgrpc
+    build:
+      context: .
+      dockerfile: src/Discount/Discount.Grpc/Dockerfile
+
+volumes:
+  catalog_data:
+  discount_data:

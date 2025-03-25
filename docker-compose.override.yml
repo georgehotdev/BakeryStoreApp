@@ -1,0 +1,106 @@
+﻿version: "3.4"
+
+services:
+  basketdb:
+    container_name: basketdb
+    restart: always
+    ports:
+      - "6379:6379"
+      
+  catalogdb:
+    container_name: catalogdb
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - catalog_data:/data/db/
+      
+  discountdb:
+    container_name: discountdb
+    restart: always
+    ports:
+      - "27018:27017"
+    volumes:
+      - discount_data:/data/db/
+
+  mongoexpresscatalogdb:
+    container_name: mongoexpresscatalogdb
+    restart: always
+    links:
+      - catalogdb
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=catalogdb
+      - ME_CONFIG_MONGODB_PORT=27017
+      - ME_CONFIG_MONGODB_ENABLE_ADMIN=true
+    ports:
+      - "8081:8081"
+  
+  mongoexpressdiscountdb:
+    container_name: mongoexpressdiscountdb
+    restart: always
+    links:
+      - discountdb
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=discountdb
+      - ME_CONFIG_MONGODB_PORT=27017
+      - ME_CONFIG_MONGODB_ENABLE_ADMIN=true
+    ports:
+      - "8082:8081"
+
+  storefront:
+    container_name: storefront
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - "CatalogService:BaseUrl=http://host.docker.internal:8000"
+      - "CatalogService:GetAllProducts=/api/v1/catalog"
+      - "DiscountService:BaseUrl=http://host.docker.internal:8002"
+      - "DiscountService:GetAllActiveDiscounts=/api/v1/discount/active"
+      - "BasketService:BaseUrl=http://host.docker.internal:8001"
+      - "BasketService:GetBasket=/api/v1/basket"
+      - "BasketService:UpdateBasket=/api/v1/basket"
+    ports:
+      - "8080:80"
+
+  catalogapi:
+    container_name: catalogapi
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - "CatalogDatabaseSettings:ConnectionString=mongodb://catalogdb:27017"
+    depends_on:
+      - catalogdb
+    ports:
+      - "8000:80"
+
+  basketapi:
+    container_name: basketapi
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - "CacheSettings:ConnectionString=basketdb:6379"
+      - "GrpcSettings:DiscountUrl=http://discountgrpc"
+      - "DiscountService:BaseUrl=http://host.docker.internal:8002"
+      - "DiscountService:GetDiscount=/api/v1/discount/product"
+    depends_on:
+      - basketdb
+    ports:
+      - "8001:80"
+  
+  discountapi:
+    container_name: discountapi
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - "DiscountDatabaseSettings:ConnectionString=mongodb://discountdb:27017"
+    depends_on:
+      - discountdb
+    ports:
+      - "8002:80"
+
+  discountgrpc:
+    container_name: discountgrpc
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - "DiscountDatabaseSettings:ConnectionString=mongodb://discountdb:27017"
+    depends_on:
+      - discountdb
+    ports:
+      - "8003:80"
+
